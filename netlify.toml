@@ -1,6 +1,15 @@
 [build]
   publish = "public"
 
+[functions]
+  directory = "netlify/functions"
+
+# /api/tebex-checkout → netlify/functions/tebex-checkout.js
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
 [[headers]]
   for = "/*"
   [headers.values]
@@ -13,3 +22,16 @@
   for = "/assets/*"
   [headers.values]
     Cache-Control = "public, max-age=3600, must-revalidate"
+
+# Páginas de retorno del pago: no se indexan ni se guardan en caché.
+[[headers]]
+  for = "/success.html"
+  [headers.values]
+    X-Robots-Tag = "noindex"
+    Cache-Control = "no-store"
+
+[[headers]]
+  for = "/cancel.html"
+  [headers.values]
+    X-Robots-Tag = "noindex"
+    Cache-Control = "no-store"
