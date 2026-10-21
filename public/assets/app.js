@@ -246,7 +246,10 @@
     var page = ROUTES[parts[0]] || 'home';
     if (page === 'store') {
       var cat = parts[1] || 'featured';
-      if (cat === 'global-30' || cat === 'global-perma') cat = 'global';
+      if (cat === 'global-30' || cat === 'global-perma') {
+        location.replace('#/tienda/global');
+        return;
+      }
       var valid = ['featured', 'cosmetics'].indexOf(cat) !== -1 || findMode(cat);
       var nextCat = valid ? cat : 'featured';
       if (nextCat !== state.category) state.tab = 'ranks';
