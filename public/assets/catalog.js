@@ -1,13 +1,13 @@
 /* Catálogo de la tienda. Edita aquí rangos, precios, modalidades y paquetes de Tebex. */
 window.SENYTRA_CATALOG = {
   ranks: [
-    { id: 'noble',    name: 'Noble',    icon: 'shield',  color: '#94a3b8', price30: 2.99,  pricePerma: 7.99 },
-    { id: 'vip',      name: 'VIP',      icon: 'star',    color: '#22c55e', price30: 4.99,  pricePerma: 12.99 },
-    { id: 'vipplus',  name: 'VIP+',     icon: 'sparkle', color: '#10b981', price30: 7.99,  pricePerma: 19.99 },
-    { id: 'supervip', name: 'SuperVip', icon: 'gem',     color: '#3b82f6', price30: 11.99, pricePerma: 29.99 },
-    { id: 'megavip',  name: 'MegaVip',  icon: 'flame',   color: '#a855f7', price30: 16.99, pricePerma: 44.99 },
-    { id: 'legend',   name: 'Legend',   icon: 'crown',   color: '#f59e0b', price30: 24.99, pricePerma: 69.99 },
-    { id: 'sintra',   name: 'SinTra',   icon: 'bolt',    color: '#ef4444', price30: 39.99, pricePerma: 99.99 }
+    { id: 'noble',    name: 'Noble',    icon: 'shield',  color: '#94a3b8', price30: 0.99,  pricePerma: 2.99 },
+    { id: 'vip',      name: 'VIP',      icon: 'star',    color: '#22c55e', price30: 1.99,  pricePerma: 4.99 },
+    { id: 'vipplus',  name: 'VIP+',     icon: 'sparkle', color: '#10b981', price30: 2.99,  pricePerma: 7.99 },
+    { id: 'supervip', name: 'SuperVip', icon: 'gem',     color: '#3b82f6', price30: 3.99,  pricePerma: 9.99 },
+    { id: 'megavip',  name: 'MegaVip',  icon: 'flame',   color: '#a855f7', price30: 5.99,  pricePerma: 14.99 },
+    { id: 'legend',   name: 'Legend',   icon: 'crown',   color: '#f59e0b', price30: 7.99,  pricePerma: 19.99 },
+    { id: 'sintra',   name: 'SinTra',   icon: 'bolt',    color: '#ef4444', price30: 9.99,  pricePerma: 29.99 }
   ],
 
   // Categorías de la tienda. "global" agrupa los rangos válidos en toda la network;
