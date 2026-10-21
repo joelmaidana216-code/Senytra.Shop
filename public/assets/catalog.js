@@ -1,13 +1,13 @@
 /* Catálogo de la tienda. Edita aquí rangos, precios, modalidades y paquetes de Tebex. */
 window.SENYTRA_CATALOG = {
   ranks: [
-    { id: 'noble',    name: 'Noble',    icon: 'shield',  color: '#94a3b8', price30: 2.99,  pricePerma: 7.99 },
-    { id: 'vip',      name: 'VIP',      icon: 'star',    color: '#22c55e', price30: 4.99,  pricePerma: 12.99 },
-    { id: 'vipplus',  name: 'VIP+',     icon: 'sparkle', color: '#10b981', price30: 7.99,  pricePerma: 19.99 },
-    { id: 'supervip', name: 'SuperVip', icon: 'gem',     color: '#3b82f6', price30: 11.99, pricePerma: 29.99 },
-    { id: 'megavip',  name: 'MegaVip',  icon: 'flame',   color: '#a855f7', price30: 16.99, pricePerma: 44.99 },
-    { id: 'legend',   name: 'Legend',   icon: 'crown',   color: '#f59e0b', price30: 24.99, pricePerma: 69.99 },
-    { id: 'sintra',   name: 'SinTra',   icon: 'bolt',    color: '#ef4444', price30: 39.99, pricePerma: 99.99 }
+    { id: 'noble',    name: 'Noble',    icon: 'shield',  color: '#94a3b8', price30: 0.99,  pricePerma: 2.99 },
+    { id: 'vip',      name: 'VIP',      icon: 'star',    color: '#22c55e', price30: 1.99,  pricePerma: 4.99 },
+    { id: 'vipplus',  name: 'VIP+',     icon: 'sparkle', color: '#10b981', price30: 2.99,  pricePerma: 7.99 },
+    { id: 'supervip', name: 'SuperVip', icon: 'gem',     color: '#3b82f6', price30: 3.99,  pricePerma: 9.99 },
+    { id: 'megavip',  name: 'MegaVip',  icon: 'flame',   color: '#a855f7', price30: 5.99,  pricePerma: 14.99 },
+    { id: 'legend',   name: 'Legend',   icon: 'crown',   color: '#f59e0b', price30: 7.99,  pricePerma: 19.99 },
+    { id: 'sintra',   name: 'SinTra',   icon: 'bolt',    color: '#ef4444', price30: 9.99,  pricePerma: 29.99 }
   ],
 
   // Categorías de la tienda. "global" agrupa los rangos válidos en toda la network;
@@ -22,20 +22,20 @@ window.SENYTRA_CATALOG = {
   ],
 
   coins: [
-    { amount: 1000,  price: 1.99 },
-    { amount: 5000,  price: 7.99, badge: 'popular' },
-    { amount: 10000, price: 14.99 }
+    { amount: 1000,  price: 0.99 },
+    { amount: 5000,  price: 2.99, badge: 'popular' },
+    { amount: 10000, price: 4.99 }
   ],
 
   keys: [
-    { id: 'common',    price: 1.99, color: '#94a3b8' },
-    { id: 'rare',      price: 3.99, color: '#3b82f6' },
-    { id: 'legendary', price: 6.99, color: '#f59e0b' }
+    { id: 'common',    price: 0.49, color: '#94a3b8' },
+    { id: 'rare',      price: 0.99, color: '#3b82f6' },
+    { id: 'legendary', price: 1.99, color: '#f59e0b' }
   ],
 
   keysAll: [
-    { count: 4,  price: 9.99, badge: 'best_value' },
-    { count: 10, price: 19.99 }
+    { count: 4,  price: 2.99, badge: 'best_value' },
+    { count: 10, price: 5.99 }
   ],
 
   // Cantidad máxima por línea del carrito para monedas y llaves (los rangos son siempre x1).
