@@ -22,20 +22,20 @@ window.SENYTRA_CATALOG = {
   ],
 
   coins: [
-    { amount: 1000,  price: 1.99 },
-    { amount: 5000,  price: 7.99, badge: 'popular' },
-    { amount: 10000, price: 14.99 }
+    { amount: 1000,  price: 0.99 },
+    { amount: 5000,  price: 2.99, badge: 'popular' },
+    { amount: 10000, price: 4.99 }
   ],
 
   keys: [
-    { id: 'common',    price: 1.99, color: '#94a3b8' },
-    { id: 'rare',      price: 3.99, color: '#3b82f6' },
-    { id: 'legendary', price: 6.99, color: '#f59e0b' }
+    { id: 'common',    price: 0.49, color: '#94a3b8' },
+    { id: 'rare',      price: 0.99, color: '#3b82f6' },
+    { id: 'legendary', price: 1.99, color: '#f59e0b' }
   ],
 
   keysAll: [
-    { count: 4,  price: 9.99, badge: 'best_value' },
-    { count: 10, price: 19.99 }
+    { count: 4,  price: 2.99, badge: 'best_value' },
+    { count: 10, price: 5.99 }
   ],
 
   // Cantidad máxima por línea del carrito para monedas y llaves (los rangos son siempre x1).
