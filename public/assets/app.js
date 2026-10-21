@@ -12,7 +12,7 @@
   var USERNAME_RE = /^[A-Za-z0-9_]{3,16}$/;
   var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-  var STORAGE = { lang: 'senytra.lang', cart: 'senytra.cart', user: 'senytra.user' };
+  var STORAGE = { lang: 'senytra.lang', cart: 'senytra.cart', user: 'senytra.user', order: 'senytra.order' };
 
   var state = {
     lang: 'es',
@@ -84,6 +84,7 @@
     cube: '<path d="M12 2 21 7v10l-9 5-9-5V7l9-5Z"/><path d="m3 7 9 5 9-5M12 12v10"/>',
     cloud: '<path d="M7 18a4 4 0 0 1-.5-8A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9H7Z"/>',
     bed: '<path d="M3 18V7M3 13h18v5M21 13a3 3 0 0 0-3-3h-7v3M7 11.5a1.5 1.5 0 1 0 0-.01"/>',
+    pokeball: '<circle cx="12" cy="12" r="9"/><path d="M3 12h6M15 12h6"/><circle cx="12" cy="12" r="3"/>',
     grid: '<rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/>',
     globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
     trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
@@ -99,50 +100,62 @@
   function findRank(id) { return CATALOG.ranks.filter(function (r) { return r.id === id; })[0]; }
   function findMode(id) { return CATALOG.modes.filter(function (m) { return m.id === id; })[0]; }
 
-  // Los identificadores de producto codifican el producto y su modalidad, p. ej. "rank.vip.30.global" o "coins.5000.prison".
+  function hasTab(mode, tab) { return !!mode && (mode.tabs || []).indexOf(tab) !== -1; }
+
+  // Paquete de Tebex asociado a un producto (ident o ID numérico de catalog.js), o null si falta.
+  function tebexPackage(kind, modeId, key) {
+    var group = { rank30: 'rank30', rankPerma: 'rankPerma', coins: 'coins', key: 'keys', keyall: 'keysAll' }[kind];
+    var map = CATALOG.tebex && CATALOG.tebex[modeId] && CATALOG.tebex[modeId][group];
+    var value = map ? map[key] : null;
+    return value === '' || value === undefined || value === null || value === 0 ? null : value;
+  }
+
+  // Los identificadores de producto codifican el producto y su modalidad, p. ej. "rank.vip.30.global" o "coins.5000.survival".
   function getProduct(id) {
     var parts = String(id).split('.');
     var kind = parts[0];
     var modeId = parts[parts.length - 1];
-    var mode = modeId === 'global' ? null : findMode(modeId);
-    if (modeId !== 'global' && !mode) return null;
-    var modeName = mode ? mode.name : t('product.scope_global');
+    var mode = findMode(modeId);
+    if (!mode) return null;
+    var max = CATALOG.maxQuantity || 64;
+    var modeName = mode.network ? t('product.scope_global') : mode.name;
 
     if (kind === 'rank') {
       var rank = findRank(parts[1]);
       var perma = parts[2] === 'perma';
-      if (!rank || (parts[2] !== '30' && !perma)) return null;
+      if (!rank || (parts[2] !== '30' && !perma) || !hasTab(mode, 'ranks')) return null;
       return {
         id: id,
         kind: 'rank',
         name: t('product.rank', { rank: rank.name, duration: t(perma ? 'store.permanent' : 'store.days30') }) + ' · ' + modeName,
         title: rank.name,
         tag: t(perma ? 'store.permanent' : 'store.days30'),
-        desc: mode ? t('store.scope_mode', { mode: mode.name }) : t('store.scope_global'),
+        desc: mode.network ? t('store.scope_global') : t('store.scope_mode', { mode: mode.name }),
         price: perma ? rank.pricePerma : rank.price30,
         color: rank.color,
-        icon: rank.icon
+        icon: rank.icon,
+        max: 1,
+        tebex: tebexPackage(perma ? 'rankPerma' : 'rank30', mode.id, rank.id)
       };
     }
-    if (!mode) return null;
 
-    if (kind === 'coins') {
+    if (kind === 'coins' && hasTab(mode, 'currency')) {
       var pack = CATALOG.coins.filter(function (c) { return String(c.amount) === parts[1]; })[0];
       if (!pack) return null;
       var coinsName = t('product.coins', { amount: number(pack.amount) });
-      return { id: id, kind: 'coins', name: coinsName + ' · ' + mode.name, title: coinsName, desc: t('store.coins_desc', { mode: mode.name }), price: pack.price, color: '#eab308', icon: 'coin', badge: pack.badge };
+      return { id: id, kind: 'coins', name: coinsName + ' · ' + mode.name, title: coinsName, desc: t('store.coins_desc', { mode: mode.name }), price: pack.price, color: '#eab308', icon: 'coin', badge: pack.badge, max: max, tebex: tebexPackage('coins', mode.id, pack.amount) };
     }
-    if (kind === 'key' && mode.hasKeys) {
+    if (kind === 'key' && hasTab(mode, 'keys')) {
       var key = CATALOG.keys.filter(function (k) { return k.id === parts[1]; })[0];
       if (!key) return null;
       var keyName = t('product.key_' + key.id);
-      return { id: id, kind: 'key', name: keyName + ' · ' + mode.name, title: keyName, desc: t('store.key_desc', { mode: mode.name }), price: key.price, color: key.color, icon: 'key' };
+      return { id: id, kind: 'key', name: keyName + ' · ' + mode.name, title: keyName, desc: t('store.key_desc', { mode: mode.name }), price: key.price, color: key.color, icon: 'key', max: max, tebex: tebexPackage('key', mode.id, key.id) };
     }
-    if (kind === 'keyall' && mode.hasKeys) {
+    if (kind === 'keyall' && hasTab(mode, 'keysall')) {
       var bundle = CATALOG.keysAll.filter(function (k) { return String(k.count) === parts[1]; })[0];
       if (!bundle) return null;
       var bundleName = t('product.keyall', { count: bundle.count });
-      return { id: id, kind: 'keyall', name: bundleName + ' · ' + mode.name, title: bundleName, desc: t('store.keysall_desc', { count: bundle.count, mode: mode.name }), price: bundle.price, color: '#10b981', icon: 'chest', badge: bundle.badge };
+      return { id: id, kind: 'keyall', name: bundleName + ' · ' + mode.name, title: bundleName, desc: t('store.keysall_desc', { count: bundle.count, mode: mode.name }), price: bundle.price, color: '#10b981', icon: 'chest', badge: bundle.badge, max: max, tebex: tebexPackage('keyall', mode.id, bundle.count) };
     }
     return null;
   }
@@ -233,7 +246,8 @@
     var page = ROUTES[parts[0]] || 'home';
     if (page === 'store') {
       var cat = parts[1] || 'featured';
-      var valid = ['featured', 'global-30', 'global-perma', 'cosmetics'].indexOf(cat) !== -1 || findMode(cat);
+      if (cat === 'global-30' || cat === 'global-perma') cat = 'global';
+      var valid = ['featured', 'cosmetics'].indexOf(cat) !== -1 || findMode(cat);
       var nextCat = valid ? cat : 'featured';
       if (nextCat !== state.category) state.tab = 'ranks';
       state.category = nextCat;
@@ -268,7 +282,7 @@
   /* ---------- Inicio ---------- */
 
   function renderModes() {
-    $('modes-grid').innerHTML = CATALOG.modes.map(function (m) {
+    $('modes-grid').innerHTML = CATALOG.modes.filter(function (m) { return !m.network; }).map(function (m) {
       return '<a class="mode-card" href="#/tienda/' + m.id + '" style="--c:' + m.color + '">' +
         '<span class="mode-icon">' + icon(m.icon) + '</span>' +
         '<h3>' + esc(m.name) + '</h3>' +
@@ -299,9 +313,6 @@
         (ic ? icon(ic) : '') + '<span>' + esc(label) + '</span></a>';
     }
     var html = link('featured', t('store.featured'), 'star');
-    html += '<div class="cat-group"><span class="cat-label">' + icon('globe') + esc(t('store.global_ranks')) + '</span>' +
-      link('global-30', t('store.global_30'), null, true) +
-      link('global-perma', t('store.global_perma'), null, true) + '</div>';
     html += '<div class="cat-group"><span class="cat-label">' + icon('grid') + esc(t('store.modalities')) + '</span>' +
       CATALOG.modes.map(function (m) { return link(m.id, m.name, null, true); }).join('') + '</div>';
     html += link('cosmetics', t('store.cosmetics'), 'sparkle');
@@ -309,7 +320,11 @@
   }
 
   function productCard(p) {
-    var inCart = state.cart.indexOf(p.id) !== -1;
+    var line = cartLine(p.id);
+    var inCart = !!line;
+    var locked = inCart && line.qty >= p.max;
+    var label = !inCart ? esc(t('store.add_to_cart')) :
+      locked ? icon('check') + esc(t('store.in_cart')) : esc(t('store.add_more', { qty: line.qty }));
     var badge = p.badge ? '<span class="ribbon">' + esc(t('store.' + p.badge)) + '</span>' : '';
     return '<article class="product-card' + (p.badge ? ' highlighted' : '') + '" style="--c:' + p.color + '">' +
       badge +
@@ -319,8 +334,8 @@
         '<p class="product-desc">' + esc(p.desc) + '</p>' +
         '<div class="product-foot">' +
           '<span class="price">' + esc(money(p.price)) + '</span>' +
-          '<button type="button" class="btn ' + (inCart ? 'btn-ghost' : 'btn-primary') + ' btn-sm" data-add="' + esc(p.id) + '"' + (inCart ? ' disabled' : '') + '>' +
-            (inCart ? icon('check') + esc(t('store.in_cart')) : esc(t('store.add_to_cart'))) +
+          '<button type="button" class="btn ' + (locked ? 'btn-ghost' : 'btn-primary') + ' btn-sm" data-add="' + esc(p.id) + '"' + (locked ? ' disabled' : '') + '>' +
+            label +
           '</button>' +
         '</div>' +
       '</div>' +
@@ -345,17 +360,12 @@
     var tabs = $('modality-tabs');
     var container = $('products-container');
     var mode = findMode(cat);
-    tabs.hidden = !mode;
+    tabs.hidden = !mode || mode.tabs.length < 2;
 
     if (cat === 'featured') {
       title.textContent = t('store.featured_title');
       desc.textContent = t('store.featured_desc');
       container.innerHTML = grid(CATALOG.featured.map(function (id) { return 'rank.' + id + '.perma.global'; }));
-    } else if (cat === 'global-30' || cat === 'global-perma') {
-      var d = cat === 'global-30' ? '30' : 'perma';
-      title.textContent = t(cat === 'global-30' ? 'store.global_30_title' : 'store.global_perma_title');
-      desc.textContent = t('store.global_desc');
-      container.innerHTML = grid(rankIds(d, 'global'));
     } else if (cat === 'cosmetics') {
       title.textContent = t('store.cosmetics');
       desc.textContent = t('store.cosmetics_desc');
@@ -364,8 +374,8 @@
         '<a class="btn btn-discord" href="' + esc(CONFIG.discordUrl) + '" target="_blank" rel="noopener noreferrer">Discord</a></div>';
     } else if (mode) {
       title.textContent = mode.name;
-      desc.textContent = t('store.mod_desc', { mode: mode.name });
-      var available = ['ranks', 'currency'].concat(mode.hasKeys ? ['keys', 'keysall'] : []);
+      desc.textContent = mode.network ? t('store.global_desc') : t('store.mod_desc', { mode: mode.name });
+      var available = mode.tabs;
       if (available.indexOf(state.tab) === -1) state.tab = 'ranks';
       var tabLabels = { ranks: 'store.tab_ranks', currency: 'store.tab_currency', keys: 'store.tab_keys', keysall: 'store.tab_keysall' };
       tabs.innerHTML = available.map(function (key) {
@@ -388,27 +398,41 @@
 
   /* ---------- Carrito ---------- */
 
-  function cartProducts() {
-    return state.cart.map(getProduct).filter(Boolean);
+  // El carrito guarda líneas { id, qty }; el producto se deriva del id con getProduct().
+  function normalizeCart(raw) {
+    var seen = {};
+    return (Array.isArray(raw) ? raw : []).map(function (entry) {
+      return typeof entry === 'string' ? { id: entry, qty: 1 } : entry;
+    }).filter(function (line) {
+      if (!line || seen[line.id]) return false;
+      var product = getProduct(line.id);
+      if (!product) return false;
+      seen[line.id] = true;
+      line.qty = Math.min(Math.max(parseInt(line.qty, 10) || 1, 1), product.max);
+      return true;
+    });
+  }
+
+  function cartLine(id) {
+    return state.cart.filter(function (line) { return line.id === id; })[0] || null;
+  }
+
+  function cartLines() {
+    return state.cart.map(function (line) {
+      var product = getProduct(line.id);
+      return product ? { product: product, qty: line.qty } : null;
+    }).filter(Boolean);
+  }
+
+  function cartCount() {
+    return cartLines().reduce(function (sum, l) { return sum + l.qty; }, 0);
   }
 
   function cartTotal() {
-    return cartProducts().reduce(function (sum, p) { return sum + p.price; }, 0);
+    return cartLines().reduce(function (sum, l) { return sum + l.product.price * l.qty; }, 0);
   }
 
-  function addToCart(id) {
-    var product = getProduct(id);
-    if (!product) return;
-    if (state.cart.indexOf(id) !== -1) { toast(t('cart.already')); return; }
-    state.cart.push(id);
-    save(STORAGE.cart, state.cart);
-    renderCart();
-    if (state.page === 'store') renderStore();
-    toast(t('cart.added', { name: product.name }), 'success');
-  }
-
-  function removeFromCart(id) {
-    state.cart = state.cart.filter(function (x) { return x !== id; });
+  function cartChanged() {
     save(STORAGE.cart, state.cart);
     renderCart();
     if (state.page === 'store') renderStore();
@@ -417,41 +441,101 @@
     }
   }
 
+  function addToCart(id) {
+    var product = getProduct(id);
+    if (!product) return;
+    var line = cartLine(id);
+    if (line && line.qty >= product.max) { toast(t(product.max === 1 ? 'cart.already' : 'cart.max'), 'error'); return; }
+    if (line) line.qty += 1; else state.cart.push({ id: id, qty: 1 });
+    cartChanged();
+    toast(t('cart.added', { name: product.name }), 'success');
+  }
+
+  function changeQty(id, delta) {
+    var line = cartLine(id);
+    var product = getProduct(id);
+    if (!line || !product) return;
+    var next = line.qty + delta;
+    if (next < 1) return removeFromCart(id);
+    if (next > product.max) { toast(t('cart.max'), 'error'); return; }
+    line.qty = next;
+    cartChanged();
+  }
+
+  function removeFromCart(id) {
+    state.cart = state.cart.filter(function (line) { return line.id !== id; });
+    cartChanged();
+  }
+
+  function qtyControl(l) {
+    var p = l.product;
+    if (p.max === 1) return '';
+    return '<span class="qty" role="group" aria-label="' + esc(t('cart.quantity') + ': ' + p.name) + '">' +
+      '<button type="button" class="qty-btn" data-qty="' + esc(p.id) + '" data-delta="-1" aria-label="' + esc(t('cart.decrease')) + '">&minus;</button>' +
+      '<span class="qty-value" aria-live="polite">' + l.qty + '</span>' +
+      '<button type="button" class="qty-btn" data-qty="' + esc(p.id) + '" data-delta="1" aria-label="' + esc(t('cart.increase')) + '"' + (l.qty >= p.max ? ' disabled' : '') + '>+</button>' +
+    '</span>';
+  }
+
   function renderCart() {
-    var products = cartProducts();
-    $('cart-count').textContent = products.length;
-    $('cart-count').classList.toggle('has-items', products.length > 0);
+    var lines = cartLines();
+    var count = cartCount();
+    $('cart-count').textContent = count;
+    $('cart-count').classList.toggle('has-items', count > 0);
     var body = $('cart-items');
     var checkoutBtn = document.querySelector('[data-action="checkout"]');
-    checkoutBtn.disabled = products.length === 0;
+    checkoutBtn.disabled = lines.length === 0;
 
-    if (products.length === 0) {
+    // Conserva el foco en los botones de cantidad al volver a pintar la lista.
+    var active = document.activeElement;
+    var focusKey = active && body.contains(active) && active.hasAttribute('data-qty') ?
+      '[data-qty="' + active.getAttribute('data-qty') + '"][data-delta="' + active.getAttribute('data-delta') + '"]' : null;
+
+    if (lines.length === 0) {
       body.innerHTML = '<div class="empty-state small">' + icon('chest', 'empty-icon') +
         '<h3>' + esc(t('cart.empty')) + '</h3><p>' + esc(t('cart.empty_desc')) + '</p>' +
         '<a href="#/tienda" class="btn btn-ghost" data-action="close">' + esc(t('cart.browse')) + '</a></div>';
     } else {
-      body.innerHTML = '<ul class="cart-list">' + products.map(function (p) {
+      body.innerHTML = '<ul class="cart-list">' + lines.map(function (l) {
+        var p = l.product;
         return '<li class="cart-item" style="--c:' + p.color + '">' +
           '<span class="cart-thumb">' + icon(p.icon) + '</span>' +
-          '<span class="cart-info"><span class="cart-name">' + esc(p.name) + '</span><span class="cart-price">' + esc(money(p.price)) + '</span></span>' +
+          '<span class="cart-info"><span class="cart-name">' + esc(p.name) + '</span>' +
+            '<span class="cart-price">' + esc(money(p.price * l.qty)) +
+            (l.qty > 1 ? ' <span class="cart-unit">' + esc(t('cart.unit_price', { price: money(p.price) })) + '</span>' : '') + '</span>' +
+            qtyControl(l) +
+          '</span>' +
           '<button type="button" class="icon-btn danger" data-remove="' + esc(p.id) + '" aria-label="' + esc(t('cart.remove') + ': ' + p.name) + '" title="' + esc(t('cart.remove')) + '">' + icon('trash') + '</button>' +
           '</li>';
       }).join('') + '</ul>';
     }
     $('cart-total').textContent = money(cartTotal());
+
+    if (focusKey) {
+      var again = body.querySelector(focusKey);
+      if (again && !again.disabled) again.focus();
+    }
   }
 
   /* ---------- Identificación ---------- */
 
+  function avatarUrl(name) {
+    var valid = USERNAME_RE.test(name || '');
+    return CONFIG.avatarUrl.replace('{name}', encodeURIComponent(valid ? name : 'MHF_Steve'));
+  }
+
   function renderAccount() {
     $('account-label').textContent = state.user || t('account.identify');
     $('account-logout').hidden = !state.user;
+    var head = $('account-head');
+    head.hidden = !state.user;
+    $('account-icon').style.display = state.user ? 'none' : '';
+    if (state.user) head.src = avatarUrl(state.user); else head.removeAttribute('src');
     updateAvatar(state.user);
   }
 
   function updateAvatar(name) {
-    var valid = USERNAME_RE.test(name || '');
-    $('account-avatar').src = 'https://mc-heads.net/avatar/' + encodeURIComponent(valid ? name : 'MHF_Steve') + '/64';
+    $('account-avatar').src = avatarUrl(name);
   }
 
   function setUser(name) {
@@ -476,9 +560,9 @@
   }
 
   function renderCheckout() {
-    var products = cartProducts();
-    $('checkout-items').innerHTML = products.map(function (p) {
-      return '<li><span>' + esc(p.name) + '</span><span class="summary-actions"><strong>' + esc(money(p.price)) + '</strong>' +
+    $('checkout-items').innerHTML = cartLines().map(function (l) {
+      var p = l.product;
+      return '<li><span>' + esc(p.name) + (l.qty > 1 ? ' <span class="muted">&times;' + l.qty + '</span>' : '') + '</span><span class="summary-actions"><strong>' + esc(money(p.price * l.qty)) + '</strong>' +
         '<button type="button" class="icon-btn danger sm" data-remove="' + esc(p.id) + '" aria-label="' + esc(t('cart.remove') + ': ' + p.name) + '">' + icon('trash') + '</button></span></li>';
     }).join('');
     $('checkout-total').textContent = money(cartTotal());
@@ -495,6 +579,41 @@
 
   function orderReference() {
     return 'SN-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).slice(2, 6).toUpperCase();
+  }
+
+  // Crea la cesta en Tebex mediante la función de Netlify. Resuelve con { url, basket },
+  // con null si la pasarela no está disponible (sin configurar o sin funciones en local)
+  // o rechaza con { message } si Tebex devuelve un error.
+  function createTebexCheckout(player, lines, reference) {
+    var missing = lines.filter(function (l) { return !l.product.tebex; });
+    if (!CONFIG.tebexEndpoint || missing.length) {
+      if (missing.length) console.warn('[Senytra] Productos sin paquete de Tebex en catalog.js:', missing.map(function (l) { return l.product.id; }));
+      return Promise.resolve(null);
+    }
+    return fetch(CONFIG.tebexEndpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: player,
+        reference: reference,
+        items: lines.map(function (l) { return { package: l.product.tebex, quantity: l.qty }; })
+      })
+    }).then(function (res) {
+      return res.json().catch(function () { return {}; }).then(function (data) {
+        if (res.ok && data.checkoutUrl) return { url: data.checkoutUrl, basket: data.basket || '' };
+        if (res.status === 404 || data.error === 'not_configured') return null;
+        var message = t('checkout.err_gateway');
+        if (data.error === 'invalid_package') {
+          var bad = lines.filter(function (l) { return String(l.product.tebex) === String(data.package); })[0];
+          if (bad) message = t('checkout.err_package', { name: bad.product.name });
+        } else if (data.error === 'invalid_username') {
+          message = t('checkout.err_mc');
+        }
+        throw { message: message };
+      });
+    }, function () {
+      throw { message: t('checkout.err_gateway') };
+    });
   }
 
   function submitCheckout(event) {
@@ -515,49 +634,69 @@
     if (!payment) return showFormError(t('checkout.err_payment'), form.querySelector('input[name="payment"]'));
     if (!terms.checked) return showFormError(t('checkout.err_terms'), terms);
 
-    var products = cartProducts();
+    var lines = cartLines();
+    if (!lines.length) return;
     var reference = orderReference();
     var player = mc.value.trim();
     var methodLabel = payment.value === 'paypal' ? 'PayPal' : t('checkout.card');
+    var total = cartTotal();
     setUser(player);
 
     var submitBtn = form.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
+    submitBtn.textContent = t('checkout.processing');
+    function resetButton() {
+      submitBtn.disabled = false;
+      submitBtn.textContent = t('checkout.confirm_pay');
+    }
 
     // Registra el pedido en Netlify Forms para que el staff lo vea en el panel de Netlify.
-    var data = new URLSearchParams({
-      'form-name': 'pedidos',
-      reference: reference,
-      minecraft: player,
-      email: email.value.trim(),
-      country: country.value,
-      payment: payment.value,
-      items: products.map(function (p) { return p.id + ' — ' + p.name + ' — ' + p.price.toFixed(2); }).join('\n'),
-      total: cartTotal().toFixed(2) + ' ' + CONFIG.currency,
-      language: state.lang
-    });
+    function logOrder(basket) {
+      var data = new URLSearchParams({
+        'form-name': 'pedidos',
+        reference: reference,
+        minecraft: player,
+        email: email.value.trim(),
+        country: country.value,
+        payment: payment.value,
+        items: lines.map(function (l) { return l.product.id + ' — ' + l.product.name + ' — ' + l.qty + ' x ' + l.product.price.toFixed(2); }).join('\n'),
+        total: total.toFixed(2) + ' ' + CONFIG.currency,
+        basket: basket || '',
+        language: state.lang
+      });
+      return fetch('/__forms.html', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: data.toString()
+      }).catch(function () { /* el pedido sigue su curso aunque falle el registro */ });
+    }
 
-    fetch('/__forms.html', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: data.toString()
-    }).catch(function () { /* el pedido se muestra igualmente al jugador */ }).then(function () {
-      submitBtn.disabled = false;
-      if (CONFIG.checkoutUrl) {
+    createTebexCheckout(player, lines, reference).then(function (tebex) {
+      if (tebex) {
+        save(STORAGE.order, { reference: reference, player: player });
         toast(t('order.redirecting'));
-        var url = CONFIG.checkoutUrl + (CONFIG.checkoutUrl.indexOf('?') === -1 ? '?' : '&') + 'ref=' + encodeURIComponent(reference);
-        window.location.href = url;
-        return;
+        return logOrder(tebex.basket).then(function () { window.location.href = tebex.url; });
       }
-      $('order-body').innerHTML =
-        '<dl class="order-details">' +
-          '<div><dt>' + esc(t('order.reference')) + '</dt><dd class="mono">' + esc(reference) + '</dd></div>' +
-          '<div><dt>' + esc(t('order.player')) + '</dt><dd>' + esc(player) + '</dd></div>' +
-          '<div><dt>' + esc(t('order.method')) + '</dt><dd>' + esc(methodLabel) + '</dd></div>' +
-          '<div><dt>' + esc(t('cart.total')) + '</dt><dd class="accent">' + esc(money(cartTotal())) + '</dd></div>' +
-        '</dl>' +
-        '<p class="muted">' + esc(t('order.manual')) + '</p>';
-      openModal('order-modal');
+      return logOrder('').then(function () {
+        resetButton();
+        if (CONFIG.checkoutUrl) {
+          toast(t('order.redirecting'));
+          window.location.href = CONFIG.checkoutUrl + (CONFIG.checkoutUrl.indexOf('?') === -1 ? '?' : '&') + 'ref=' + encodeURIComponent(reference);
+          return;
+        }
+        $('order-body').innerHTML =
+          '<dl class="order-details">' +
+            '<div><dt>' + esc(t('order.reference')) + '</dt><dd class="mono">' + esc(reference) + '</dd></div>' +
+            '<div><dt>' + esc(t('order.player')) + '</dt><dd>' + esc(player) + '</dd></div>' +
+            '<div><dt>' + esc(t('order.method')) + '</dt><dd>' + esc(methodLabel) + '</dd></div>' +
+            '<div><dt>' + esc(t('cart.total')) + '</dt><dd class="accent">' + esc(money(total)) + '</dd></div>' +
+          '</dl>' +
+          '<p class="muted">' + esc(t('order.manual')) + '</p>';
+        openModal('order-modal');
+      });
+    }).catch(function (err) {
+      resetButton();
+      showFormError((err && err.message) || t('checkout.err_gateway'));
     });
   }
 
@@ -601,13 +740,14 @@
     $('lang-select').addEventListener('change', function (e) { setLang(e.target.value); });
 
     document.addEventListener('click', function (e) {
-      var target = e.target.closest('[data-action], [data-add], [data-remove], [data-tab]');
+      var target = e.target.closest('[data-action], [data-add], [data-remove], [data-qty], [data-tab]');
       if (!target) {
         if (e.target.classList && e.target.classList.contains('overlay')) closeModal(e.target);
         return;
       }
       if (target.hasAttribute('data-add')) return addToCart(target.getAttribute('data-add'));
       if (target.hasAttribute('data-remove')) return removeFromCart(target.getAttribute('data-remove'));
+      if (target.hasAttribute('data-qty')) return changeQty(target.getAttribute('data-qty'), parseInt(target.getAttribute('data-delta'), 10) || 0);
       if (target.hasAttribute('data-tab')) { state.tab = target.getAttribute('data-tab'); return renderStore(); }
 
       switch (target.getAttribute('data-action')) {
@@ -670,7 +810,8 @@
 
   function init() {
     state.lang = detectLang();
-    state.cart = (load(STORAGE.cart, []) || []).filter(function (id) { return getProduct(id); });
+    state.cart = normalizeCart(load(STORAGE.cart, []));
+    save(STORAGE.cart, state.cart);
     var user = load(STORAGE.user, '');
     state.user = USERNAME_RE.test(user || '') ? user : '';
     $('server-ip').textContent = CONFIG.serverIp;

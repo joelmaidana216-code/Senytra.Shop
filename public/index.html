@@ -4,11 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Senytra Network — Servidor de Minecraft</title>
-  <meta name="description" content="Senytra Network: servidor de Minecraft 1.8 – 1.21 con Survival, Prison, OneBlock, SkyBlock y BedWars. Tienda oficial de rangos, monedas y llaves.">
+  <meta name="description" content="Senytra Network: servidor de Minecraft 1.8 – 1.21 con Survival, Skyblock, Pokebox y Oneblock. Tienda oficial de rangos, monedas y llaves.">
   <meta name="theme-color" content="#0a0b10">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Senytra Network — Servidor de Minecraft">
-  <meta property="og:description" content="Survival, Prison, OneBlock, SkyBlock y BedWars. Conéctate a play.senytra.net">
+  <meta property="og:description" content="Survival, Skyblock, Pokebox y Oneblock. Conéctate a play.senytra.net">
   <meta property="og:image" content="/.netlify/images?url=/img/hero.png&w=1200&fm=jpg">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -42,7 +42,8 @@
           <option value="pt">PT · Português</option>
         </select>
         <button type="button" class="btn btn-ghost btn-sm" data-action="open-account" id="account-btn">
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8a7 7 0 0 1 14 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <svg class="icon" id="account-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8a7 7 0 0 1 14 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <img id="account-head" class="account-head" alt="" width="22" height="22" hidden>
           <span id="account-label" data-i18n="account.identify">Identificarse</span>
         </button>
         <button type="button" class="btn btn-ghost btn-sm cart-btn" data-action="open-cart">
@@ -92,7 +93,7 @@
         <div class="section-head">
           <span class="eyebrow" data-i18n="home.modes_eyebrow">Modalidades</span>
           <h2 id="modes-title" class="section-title" data-i18n="home.modes_title">Elige cómo quieres jugar</h2>
-          <p class="section-desc" data-i18n="home.modes_desc">Cinco modalidades con progreso propio, economía equilibrada y actualizaciones constantes.</p>
+          <p class="section-desc" data-i18n="home.modes_desc">Cuatro modalidades con progreso propio, economía equilibrada y actualizaciones constantes.</p>
         </div>
         <div class="modes-grid" id="modes-grid"></div>
       </section>

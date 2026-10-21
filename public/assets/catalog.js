@@ -1,4 +1,4 @@
-/* Catálogo de la tienda. Edita aquí rangos, precios y productos. */
+/* Catálogo de la tienda. Edita aquí rangos, precios, modalidades y paquetes de Tebex. */
 window.SENYTRA_CATALOG = {
   ranks: [
     { id: 'noble',    name: 'Noble',    icon: 'shield',  color: '#94a3b8', price30: 2.99,  pricePerma: 7.99 },
@@ -10,12 +10,15 @@ window.SENYTRA_CATALOG = {
     { id: 'sintra',   name: 'SinTra',   icon: 'bolt',    color: '#ef4444', price30: 39.99, pricePerma: 99.99 }
   ],
 
+  // Categorías de la tienda. "global" agrupa los rangos válidos en toda la network;
+  // el resto son modalidades de juego (aparecen también en la portada).
+  // tabs: pestañas visibles (ranks, currency, keys, keysall).
   modes: [
-    { id: 'survival', name: 'Survival', icon: 'tree',   color: '#22c55e', hasKeys: true },
-    { id: 'prison',   name: 'Prison',   icon: 'pick',   color: '#f59e0b', hasKeys: true },
-    { id: 'oneblock', name: 'OneBlock', icon: 'cube',   color: '#14b8a6', hasKeys: true },
-    { id: 'skyblock', name: 'SkyBlock', icon: 'cloud',  color: '#38bdf8', hasKeys: true },
-    { id: 'bedwars',  name: 'BedWars',  icon: 'bed',    color: '#ef4444', hasKeys: false }
+    { id: 'global',   name: 'Global / Network', icon: 'globe',    color: '#a855f7', network: true, tabs: ['ranks'] },
+    { id: 'survival', name: 'Survival',         icon: 'tree',     color: '#22c55e', tabs: ['ranks', 'currency', 'keys', 'keysall'] },
+    { id: 'skyblock', name: 'Skyblock',         icon: 'cloud',    color: '#38bdf8', tabs: ['ranks', 'currency', 'keys', 'keysall'] },
+    { id: 'pokebox',  name: 'Pokebox',          icon: 'pokeball', color: '#ef4444', tabs: ['ranks', 'currency', 'keys', 'keysall'] },
+    { id: 'oneblock', name: 'Oneblock',         icon: 'cube',     color: '#14b8a6', tabs: ['ranks', 'currency', 'keys', 'keysall'] }
   ],
 
   coins: [
@@ -35,8 +38,50 @@ window.SENYTRA_CATALOG = {
     { count: 10, price: 19.99 }
   ],
 
+  // Cantidad máxima por línea del carrito para monedas y llaves (los rangos son siempre x1).
+  maxQuantity: 64,
+
   // Rangos que aparecen en "Destacados" (siempre globales y permanentes)
   featured: ['sintra', 'legend', 'megavip'],
+
+  // Paquete de Tebex que corresponde a cada producto: su ident (p. ej. 'pkg_12_456', recomendado)
+  // o su ID numérico, tal como aparece en creator.tebex.io → Packages.
+  // Los precios que se cobran son los de Tebex: mantenlos iguales a los de arriba.
+  // Mientras falte algún paquete del carrito, el checkout registra el pedido y deriva a soporte.
+  tebex: {
+    global: {
+      rank30:    { noble: '', vip: '', vipplus: '', supervip: '', megavip: '', legend: '', sintra: '' },
+      rankPerma: { noble: '', vip: '', vipplus: '', supervip: '', megavip: '', legend: '', sintra: '' }
+    },
+    survival: {
+      rank30:    { noble: '', vip: '', vipplus: '', supervip: '', megavip: '', legend: '', sintra: '' },
+      rankPerma: { noble: '', vip: '', vipplus: '', supervip: '', megavip: '', legend: '', sintra: '' },
+      coins:     { 1000: '', 5000: '', 10000: '' },
+      keys:      { common: '', rare: '', legendary: '' },
+      keysAll:   { 4: '', 10: '' }
+    },
+    skyblock: {
+      rank30:    { noble: '', vip: '', vipplus: '', supervip: '', megavip: '', legend: '', sintra: '' },
+      rankPerma: { noble: '', vip: '', vipplus: '', supervip: '', megavip: '', legend: '', sintra: '' },
+      coins:     { 1000: '', 5000: '', 10000: '' },
+      keys:      { common: '', rare: '', legendary: '' },
+      keysAll:   { 4: '', 10: '' }
+    },
+    pokebox: {
+      rank30:    { noble: '', vip: '', vipplus: '', supervip: '', megavip: '', legend: '', sintra: '' },
+      rankPerma: { noble: '', vip: '', vipplus: '', supervip: '', megavip: '', legend: '', sintra: '' },
+      coins:     { 1000: '', 5000: '', 10000: '' },
+      keys:      { common: '', rare: '', legendary: '' },
+      keysAll:   { 4: '', 10: '' }
+    },
+    oneblock: {
+      rank30:    { noble: '', vip: '', vipplus: '', supervip: '', megavip: '', legend: '', sintra: '' },
+      rankPerma: { noble: '', vip: '', vipplus: '', supervip: '', megavip: '', legend: '', sintra: '' },
+      coins:     { 1000: '', 5000: '', 10000: '' },
+      keys:      { common: '', rare: '', legendary: '' },
+      keysAll:   { 4: '', 10: '' }
+    }
+  },
 
   // Países del formulario de pago (códigos ISO; el nombre se traduce automáticamente)
   countries: ['AR', 'BO', 'BR', 'CL', 'CO', 'CR', 'CU', 'DO', 'EC', 'SV', 'ES', 'US', 'GT', 'HN', 'MX', 'NI', 'PA', 'PY', 'PE', 'PT', 'PR', 'UY', 'VE']
