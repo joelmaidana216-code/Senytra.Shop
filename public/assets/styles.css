@@ -507,10 +507,6 @@ fieldset.panel legend + * { clear: both; }
 @media (max-width: 960px) {
   .store-layout { grid-template-columns: 1fr; }
   .store-sidebar { position: static; }
-  .cat-nav { flex-direction: row; flex-wrap: wrap; gap: .35rem; }
-  .cat-group { flex-direction: row; flex-wrap: wrap; margin: 0; gap: .35rem; }
-  .cat-label { display: none; }
-  .cat-link, .cat-link.sub { padding: .45rem .8rem; border: 1px solid var(--border); }
   .notice { display: none; }
   .checkout-grid { grid-template-columns: 1fr; }
   .order-summary { position: static; order: -1; }
