@@ -246,11 +246,11 @@
     var page = ROUTES[parts[0]] || 'home';
     if (page === 'store') {
       var cat = parts[1] || 'featured';
-      if (cat === 'global-30' || cat === 'global-perma') {
-        location.replace('#/tienda/global');
+      if (cat === 'global') {
+        location.replace('#/tienda/global-30');
         return;
       }
-      var valid = ['featured', 'cosmetics'].indexOf(cat) !== -1 || findMode(cat);
+      var valid = ['featured', 'global-30', 'global-perma', 'cosmetics'].indexOf(cat) !== -1 || findMode(cat);
       var nextCat = valid ? cat : 'featured';
       if (nextCat !== state.category) state.tab = 'ranks';
       state.category = nextCat;
@@ -316,8 +316,11 @@
         (ic ? icon(ic) : '') + '<span>' + esc(label) + '</span></a>';
     }
     var html = link('featured', t('store.featured'), 'star');
+    html += '<div class="cat-group"><span class="cat-label">' + icon('globe') + esc(t('store.global_ranks')) + '</span>' +
+      link('global-30', t('store.global_30'), null, true) +
+      link('global-perma', t('store.global_perma'), null, true) + '</div>';
     html += '<div class="cat-group"><span class="cat-label">' + icon('grid') + esc(t('store.modalities')) + '</span>' +
-      CATALOG.modes.map(function (m) { return link(m.id, m.name, null, true); }).join('') + '</div>';
+      CATALOG.modes.filter(function (m) { return !m.network; }).map(function (m) { return link(m.id, m.name, null, true); }).join('') + '</div>';
     html += link('cosmetics', t('store.cosmetics'), 'sparkle');
     $('cat-nav').innerHTML = html;
   }
@@ -369,6 +372,10 @@
       title.textContent = t('store.featured_title');
       desc.textContent = t('store.featured_desc');
       container.innerHTML = grid(CATALOG.featured.map(function (id) { return 'rank.' + id + '.perma.global'; }));
+    } else if (cat === 'global-30' || cat === 'global-perma') {
+      title.textContent = t(cat === 'global-30' ? 'store.global_30_title' : 'store.global_perma_title');
+      desc.textContent = t('store.global_desc');
+      container.innerHTML = grid(rankIds(cat === 'global-30' ? '30' : 'perma', 'global'));
     } else if (cat === 'cosmetics') {
       title.textContent = t('store.cosmetics');
       desc.textContent = t('store.cosmetics_desc');
