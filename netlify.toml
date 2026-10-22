@@ -1,4 +1,6 @@
+# Sitio estático sin paso de build: este comando reemplaza cualquier "Build command" configurado en el panel de Netlify.
 [build]
+  command = "echo 'Sin paso de build'"
   publish = "public"
 
 [functions]
