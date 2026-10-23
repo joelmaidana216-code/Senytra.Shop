@@ -12,7 +12,7 @@ Sitio oficial del servidor de Minecraft **Senytra Network** (1.8 – 1.21): pág
 ## Estructura
 
 ```
-public/
+HTML/
   index.html          Estructura de todas las pantallas
   success.html        Retorno tras un pago completado en Tebex
   cancel.html         Retorno tras cancelar el pago
@@ -38,13 +38,13 @@ netlify.toml          Carpeta publicada, funciones, /api/* y cabeceras
 netlify dev
 ```
 
-O con cualquier servidor estático apuntando a `public/` (por ejemplo `npx serve public`). La imagen de portada usa Netlify Image CDN, así que se ve mejor con `netlify dev`.
+O con cualquier servidor estático apuntando a `HTML/` (por ejemplo `npx serve HTML`). La imagen de portada usa Netlify Image CDN, así que se ve mejor con `netlify dev`.
 
 ## Tareas habituales
 
-- **Cambiar precios o productos:** edita `public/assets/catalog.js`.
-- **Cambiar textos:** edita `public/assets/i18n.js`. Cada clave debe existir en los tres idiomas.
-- **Cambiar IP, Discord o correo:** edita `public/assets/config.js`.
+- **Cambiar precios o productos:** edita `HTML/assets/catalog.js`.
+- **Cambiar textos:** edita `HTML/assets/i18n.js`. Cada clave debe existir en los tres idiomas.
+- **Cambiar IP, Discord o correo:** edita `HTML/assets/config.js`.
 - **Ver pedidos:** panel de Netlify → *Forms* → `pedidos`. Puedes activar avisos por correo o Discord desde ahí.
 
 ## Cobros con Tebex

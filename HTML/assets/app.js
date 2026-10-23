@@ -20,7 +20,9 @@
     user: '',
     page: 'home',
     category: 'featured',
-    tab: 'ranks'
+    tab: '30',
+    rankOptionsOpen: false,
+    accOpen: null
   };
 
   /* ---------- Utilidades ---------- */
@@ -252,13 +254,11 @@
       }
       var valid = ['featured', 'cosmetics'].indexOf(cat) !== -1 || findMode(cat);
       var nextCat = valid ? cat : 'featured';
-      if (nextCat !== state.category) state.tab = 'ranks';
+      if (nextCat !== state.category) {
+        state.tab = '30';
+        state.rankOptionsOpen = false;
+      }
       state.category = nextCat;
-    }
-    if (page === 'checkout' && state.cart.length === 0) {
-      toast(t('checkout.empty_redirect'), 'error');
-      location.replace('#/tienda');
-      return;
     }
     var changed = page !== state.page;
     state.page = page;
@@ -306,19 +306,60 @@
     }
   }
 
-  /* ---------- Tienda ---------- */
+  /* ---------- Tienda (acordeón de categorías) ---------- */
 
-  function renderCatNav() {
+  function accHeader(id, label, ic) {
+    var open = state.accOpen === id;
+    return '<button type="button" class="cat-acc-header' + (open ? ' open' : '') + '" data-acc-toggle="' + esc(id) + '"' +
+      ' aria-expanded="' + open + '" aria-controls="cat-acc-body-' + esc(id) + '">' +
+      (ic ? '<span class="cat-acc-icon">' + icon(ic) + '</span>' : '') +
+      '<span class="cat-acc-label">' + esc(label) + '</span>' +
+      '<span class="cat-acc-arrow" aria-hidden="true">▾</span>' +
+      '</button>';
+  }
+
+  function accBody(id, inner) {
+    var open = state.accOpen === id;
+    return '<div id="cat-acc-body-' + esc(id) + '" class="cat-acc-body' + (open ? ' open' : '') +
+      '" data-acc-body="' + esc(id) + '" aria-hidden="' + !open + '"' + (open ? '' : ' inert') + '>' + inner + '</div>';
+  }
+
+  function setAccordionOpen(id) {
+    state.accOpen = state.accOpen === id ? null : id;
+    document.querySelectorAll('[data-acc-toggle]').forEach(function (header) {
+      var open = header.getAttribute('data-acc-toggle') === state.accOpen;
+      var body = document.getElementById(header.getAttribute('aria-controls'));
+      header.classList.toggle('open', open);
+      header.setAttribute('aria-expanded', String(open));
+      if (body) {
+        body.classList.toggle('open', open);
+        body.setAttribute('aria-hidden', String(!open));
+        body.inert = !open;
+      }
+    });
+  }
+
+  function renderAccordion() {
     var c = state.category;
-    function link(cat, label, ic, sub) {
+    function itemBtn(cat, label, sub) {
       var active = c === cat;
-      return '<a href="#/tienda/' + cat + '" class="cat-link' + (sub ? ' sub' : '') + (active ? ' active' : '') + '"' + (active ? ' aria-current="page"' : '') + '>' +
-        (ic ? icon(ic) : '') + '<span>' + esc(label) + '</span></a>';
+      return '<button type="button" class="cat-acc-item' + (sub ? ' sub' : '') + (active ? ' active' : '') + '"' +
+        ' data-acc-item="' + esc(cat) + '"' + (active ? ' aria-current="page"' : '') + '>' + esc(label) + '</button>';
     }
-    var html = link('featured', t('store.featured'), 'star');
-    html += '<div class="cat-group"><span class="cat-label">' + icon('grid') + esc(t('store.modalities')) + '</span>' +
-      CATALOG.modes.map(function (m) { return link(m.id, m.name, null, true); }).join('') + '</div>';
-    html += link('cosmetics', t('store.cosmetics'), 'sparkle');
+    var html = '<div class="cat-acc-section">' + accHeader('featured', t('store.featured'), 'star') +
+      accBody('featured', itemBtn('featured', t('store.featured_view'))) + '</div>';
+
+    html += '<div class="cat-acc-section">' + accHeader('global', t('store.global_ranks'), 'globe') +
+      accBody('global',
+        itemBtn('global-30', t('store.global_30'), true) +
+        itemBtn('global-perma', t('store.global_perma'), true)) + '</div>';
+
+    html += '<div class="cat-acc-section">' + accHeader('modes', t('store.modalities'), 'grid') +
+      accBody('modes', CATALOG.modes.filter(function (m) { return !m.network; }).map(function (m) { return itemBtn(m.id, m.name, true); }).join('')) + '</div>';
+
+    html += '<div class="cat-acc-section">' + accHeader('cosmetics', t('store.cosmetics'), 'sparkle') +
+      accBody('cosmetics', itemBtn('cosmetics', t('store.cosmetics_view'))) + '</div>';
+
     $('cat-nav').innerHTML = html;
   }
 
@@ -356,19 +397,25 @@
   }
 
   function renderStore() {
-    renderCatNav();
+    renderAccordion();
     var cat = state.category;
+    var mode = findMode(cat);
     var title = $('category-title');
     var desc = $('category-desc');
-    var tabs = $('modality-tabs');
     var container = $('products-container');
-    var mode = findMode(cat);
+    var tabs = $('modality-tabs');
     tabs.hidden = !mode || mode.tabs.length < 2;
+    tabs.innerHTML = '';
 
     if (cat === 'featured') {
       title.textContent = t('store.featured_title');
       desc.textContent = t('store.featured_desc');
       container.innerHTML = grid(CATALOG.featured.map(function (id) { return 'rank.' + id + '.perma.global'; }));
+    } else if (cat === 'global-30' || cat === 'global-perma') {
+      var d = cat === 'global-30' ? '30' : 'perma';
+      title.textContent = t(cat === 'global-30' ? 'store.global_30_title' : 'store.global_perma_title');
+      desc.textContent = t('store.global_desc');
+      container.innerHTML = grid(rankIds(d, 'global'), t(cat === 'global-30' ? 'store.global_30_title' : 'store.global_perma_title'));
     } else if (cat === 'cosmetics') {
       title.textContent = t('store.cosmetics');
       desc.textContent = t('store.cosmetics_desc');
@@ -378,24 +425,41 @@
     } else if (mode) {
       title.textContent = mode.name;
       desc.textContent = mode.network ? t('store.global_desc') : t('store.mod_desc', { mode: mode.name });
-      var available = mode.tabs;
-      if (available.indexOf(state.tab) === -1) state.tab = 'ranks';
+      var available = mode.tabs || [];
+      var contentTabs = (available.indexOf('ranks') !== -1 ? ['30', 'perma'] : [])
+        .concat(available.filter(function (key) { return key !== 'ranks'; }));
+      var defaultTab = available.indexOf('ranks') !== -1 ? '30' : available[0];
+      if (contentTabs.indexOf(state.tab) === -1) state.tab = defaultTab;
       var tabLabels = { ranks: 'store.tab_ranks', currency: 'store.tab_currency', keys: 'store.tab_keys', keysall: 'store.tab_keysall' };
-      tabs.innerHTML = available.map(function (key) {
-        var selected = key === state.tab;
-        return '<button type="button" role="tab" class="tab' + (selected ? ' active' : '') + '" aria-selected="' + selected + '" data-tab="' + key + '">' + esc(t(tabLabels[key])) + '</button>';
-      }).join('');
-
-      if (state.tab === 'ranks') {
-        container.innerHTML = grid(rankIds('30', mode.id), t('store.ranks_30_title', { mode: mode.name })) +
-          grid(rankIds('perma', mode.id), t('store.ranks_perma_title', { mode: mode.name }));
-      } else if (state.tab === 'currency') {
-        container.innerHTML = grid(CATALOG.coins.map(function (c) { return 'coins.' + c.amount + '.' + mode.id; }));
-      } else if (state.tab === 'keys') {
-        container.innerHTML = grid(CATALOG.keys.map(function (k) { return 'key.' + k.id + '.' + mode.id; }));
-      } else {
-        container.innerHTML = grid(CATALOG.keysAll.map(function (k) { return 'keyall.' + k.count + '.' + mode.id; }));
-      }
+      var rankSelected = state.tab === '30' || state.tab === 'perma';
+      var rankOptionsClass = 'rank-duration-options' + (state.rankOptionsOpen ? ' open' : '');
+      tabs.setAttribute('role', 'group');
+      tabs.setAttribute('aria-label', t('store.categories'));
+      tabs.innerHTML = '<div class="modality-tabs-inner">' + available.map(function (key) {
+          if (key === 'ranks') {
+            return '<button type="button" id="modality-tab-ranks" class="tab rank-toggle' + (rankSelected ? ' active tab-active' : '') +
+              '" aria-expanded="' + state.rankOptionsOpen + '" aria-controls="rank-duration-options" aria-pressed="' + rankSelected +
+              '" data-tab="ranks-toggle">' + esc(t(tabLabels.ranks)) + '<span class="rank-toggle-arrow" aria-hidden="true">▾</span></button>';
+          }
+          var selected = key === state.tab;
+          return '<button type="button" id="modality-tab-' + key + '" class="tab' + (selected ? ' active tab-active' : '') + '" aria-controls="products-tab-panel" aria-pressed="' + selected + '" data-tab="' + key + '">' + esc(t(tabLabels[key])) + '</button>';
+        }).join('') + '</div>' +
+        '<div id="rank-duration-options" class="' + rankOptionsClass + '" aria-hidden="' + !state.rankOptionsOpen + '"' + (state.rankOptionsOpen ? '' : ' inert') + '>' +
+          '<button type="button" class="tab rank-duration-option' + (state.tab === 'perma' ? ' active tab-active' : '') + '" aria-pressed="' + (state.tab === 'perma') + '" data-tab="perma">' + esc(t('store.global_perma')) + '</button>' +
+          '<button type="button" class="tab rank-duration-option' + (state.tab === '30' ? ' active tab-active' : '') + '" aria-pressed="' + (state.tab === '30') + '" data-tab="30">' + esc(t('store.global_30')) + '</button>' +
+        '</div>';
+      var panelLabel = rankSelected ? 'ranks' : state.tab;
+      container.innerHTML = '<div id="products-tab-panel" class="products-tab-panel" role="tabpanel" aria-labelledby="modality-tab-' + panelLabel + '">' +
+        (state.tab === '30'
+          ? grid(rankIds('30', mode.id), t('store.ranks_30_title', { mode: mode.name }))
+        : state.tab === 'perma'
+          ? grid(rankIds('perma', mode.id), t('store.ranks_perma_title', { mode: mode.name }))
+        : state.tab === 'currency'
+          ? grid(CATALOG.coins.map(function (c) { return 'coins.' + c.amount + '.' + mode.id; }))
+        : state.tab === 'keys'
+          ? grid(CATALOG.keys.map(function (k) { return 'key.' + k.id + '.' + mode.id; }))
+          : grid(CATALOG.keysAll.map(function (k) { return 'keyall.' + k.count + '.' + mode.id; }))) +
+        '</div>';
     }
   }
 
@@ -439,9 +503,7 @@
     save(STORAGE.cart, state.cart);
     renderCart();
     if (state.page === 'store') renderStore();
-    if (state.page === 'checkout') {
-      if (state.cart.length === 0) location.hash = '#/tienda'; else renderCheckout();
-    }
+    if (state.page === 'checkout') renderCheckout();
   }
 
   function addToCart(id) {
@@ -571,10 +633,83 @@
     $('checkout-total').textContent = money(cartTotal());
     var mc = $('form-mc');
     if (!mc.value && state.user) mc.value = state.user;
+    updateCheckoutVisibility();
+    validateMcField();
+  }
+
+  function updateCheckoutVisibility() {
+    var totalEl = $('checkout-total');
+    var form = $('checkout-form');
+    if (!form || !totalEl) return;
+
+    var totalText = totalEl.textContent.trim();
+    var empty = !totalText || totalText === '$0.00' || cartTotal() <= 0;
+    var grid = form.closest('.checkout-grid');
+    var summary = grid ? grid.querySelector('.order-summary') : null;
+    var message = $('checkout-empty');
+
+    if (empty) {
+      if (!message) {
+        message = document.createElement('div');
+        message.id = 'checkout-empty';
+        message.className = 'checkout-empty';
+        message.setAttribute('role', 'status');
+        var text = document.createElement('p');
+        text.textContent = t('checkout.empty_cart_msg');
+        message.appendChild(text);
+        if (grid && grid.parentNode) grid.parentNode.insertBefore(message, grid);
+      } else {
+        var msgText = message.querySelector('p');
+        if (msgText) msgText.textContent = t('checkout.empty_cart_msg');
+      }
+    } else if (message) {
+      message.remove();
+    }
+
+    form.hidden = empty;
+    if (grid) grid.hidden = empty;
+    if (summary) summary.hidden = empty;
+  }
+
+  function validateMcField() {
+    var mc = $('form-mc');
+    if (!mc) return false;
+
+    var err = $('mc-error');
+    var submitBtn = document.querySelector('#checkout-form button[type="submit"]');
+    var valid = USERNAME_RE.test(mc.value);
+
+    if (err) {
+      err.hidden = valid;
+      err.textContent = valid ? '' : t('checkout.mc_invalid');
+    }
+    mc.setAttribute('aria-invalid', valid ? 'false' : 'true');
+    if (submitBtn) {
+      submitBtn.disabled = !valid;
+      submitBtn.style.opacity = valid ? '' : '0.5';
+    }
+    return valid;
+  }
+
+  function ensureMcError() {
+    var mc = $('form-mc');
+    if (!mc) return null;
+
+    var err = $('mc-error');
+    if (!err) {
+      err = document.createElement('small');
+      err.id = 'mc-error';
+      err.className = 'field-error';
+      err.setAttribute('role', 'alert');
+      err.setAttribute('aria-live', 'polite');
+      mc.parentNode.appendChild(err);
+    }
+    return err;
   }
 
   function showFormError(message, field) {
     var box = $('form-error');
+    if (!box) return;
     box.textContent = message;
     box.hidden = false;
     if (field) { field.focus(); field.setAttribute('aria-invalid', 'true'); }
@@ -631,7 +766,7 @@
     var payment = form.querySelector('input[name="payment"]:checked');
     var terms = $('form-terms');
 
-    if (!USERNAME_RE.test(mc.value.trim())) return showFormError(t('checkout.err_mc'), mc);
+    if (!validateMcField()) return showFormError(t('checkout.err_mc'), mc);
     if (!EMAIL_RE.test(email.value.trim())) return showFormError(t('checkout.err_email'), email);
     if (!country.value) return showFormError(t('checkout.err_country'), country);
     if (!payment) return showFormError(t('checkout.err_payment'), form.querySelector('input[name="payment"]'));
@@ -640,7 +775,7 @@
     var lines = cartLines();
     if (!lines.length) return;
     var reference = orderReference();
-    var player = mc.value.trim();
+    var player = mc.value;
     var methodLabel = payment.value === 'paypal' ? 'PayPal' : t('checkout.card');
     var total = cartTotal();
     setUser(player);
@@ -734,6 +869,7 @@
     renderCart();
     renderAccount();
     renderCountries();
+    renderAccordion();
     renderPage();
   }
 
@@ -743,15 +879,37 @@
     $('lang-select').addEventListener('change', function (e) { setLang(e.target.value); });
 
     document.addEventListener('click', function (e) {
-      var target = e.target.closest('[data-action], [data-add], [data-remove], [data-qty], [data-tab]');
+      var target = e.target.closest('[data-action], [data-add], [data-remove], [data-tab], [data-acc-toggle], [data-acc-item]');
       if (!target) {
         if (e.target.classList && e.target.classList.contains('overlay')) closeModal(e.target);
         return;
       }
       if (target.hasAttribute('data-add')) return addToCart(target.getAttribute('data-add'));
       if (target.hasAttribute('data-remove')) return removeFromCart(target.getAttribute('data-remove'));
-      if (target.hasAttribute('data-qty')) return changeQty(target.getAttribute('data-qty'), parseInt(target.getAttribute('data-delta'), 10) || 0);
-      if (target.hasAttribute('data-tab')) { state.tab = target.getAttribute('data-tab'); return renderStore(); }
+      if (target.hasAttribute('data-tab')) {
+        var selectedTab = target.getAttribute('data-tab');
+        if (selectedTab === 'ranks-toggle') {
+          state.rankOptionsOpen = !state.rankOptionsOpen;
+        } else {
+          state.tab = selectedTab;
+          if (selectedTab !== '30' && selectedTab !== 'perma') state.rankOptionsOpen = false;
+        }
+        return renderStore();
+      }
+      if (target.hasAttribute('data-acc-toggle')) {
+        var id = target.getAttribute('data-acc-toggle');
+        return setAccordionOpen(id);
+      }
+      if (target.hasAttribute('data-acc-item')) {
+        var cat = target.getAttribute('data-acc-item');
+        if (cat !== state.category) {
+          state.tab = '30';
+          state.rankOptionsOpen = false;
+        }
+        state.category = cat;
+        history.replaceState(null, '', '#/tienda/' + cat);
+        return renderStore();
+      }
 
       switch (target.getAttribute('data-action')) {
         case 'copy-ip': copyIp(); break;
@@ -806,6 +964,16 @@
     });
 
     $('checkout-form').addEventListener('submit', submitCheckout);
+
+    var mcInput = $('form-mc');
+    ensureMcError();
+    mcInput.addEventListener('input', function () {
+      validateMcField();
+    });
+    mcInput.addEventListener('blur', function () {
+      validateMcField();
+    });
+
     window.addEventListener('hashchange', parseRoute);
   }
 
