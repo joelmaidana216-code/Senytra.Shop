@@ -2,7 +2,7 @@
 window.SENYTRA_CONFIG = {
   serverIp: 'play.senytra.net',
   discordUrl: 'https://discord.gg/rDwhHa25s6',
-  supportEmail: 'staff@senytra.net',
+  supportEmail: 'staff.senytra@gmail.com',
   currency: 'USD',
   // Función de Netlify que crea la cesta en Tebex y devuelve la URL oficial de pago
   // (netlify/functions/tebex-checkout.js). Necesita TEBEX_PUBLIC_TOKEN y TEBEX_SECRET_KEY

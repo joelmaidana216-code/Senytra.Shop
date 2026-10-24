@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>Pago cancelado — Senytra Network</title>
+  <meta name="theme-color" content="#0a0b10">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body class="return-page" data-return="cancel" data-title="return.cancel_title">
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="/" class="brand" aria-label="Senytra Network">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span><span class="accent">Senytra</span> Network</span>
+      </a>
+    </div>
+  </header>
+
+  <main class="return-main">
+    <section class="panel return-card" aria-labelledby="return-title">
+      <span class="return-icon cancel" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+      </span>
+      <h1 id="return-title" class="page-title" data-i18n="return.cancel_title">Pago cancelado</h1>
+      <p class="return-desc" data-i18n="return.cancel_desc">No se ha realizado ningún cobro. Tu carrito sigue guardado por si quieres intentarlo de nuevo.</p>
+
+      <dl class="order-details" id="return-details" hidden>
+        <div id="return-player-row" hidden>
+          <dt data-i18n="return.player">Jugador</dt>
+          <dd class="return-player"><img id="return-head" alt="" width="24" height="24"><span id="return-player"></span></dd>
+        </div>
+        <div id="return-reference-row" hidden>
+          <dt data-i18n="return.reference">Referencia</dt>
+          <dd class="mono" id="return-reference"></dd>
+        </div>
+      </dl>
+
+      <div class="return-actions">
+        <a href="/#/checkout" class="btn btn-primary btn-lg" data-i18n="return.back_checkout">Volver al pago</a>
+        <a href="/#/tienda" class="btn btn-ghost btn-lg" data-i18n="return.back_store">Volver a la tienda</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="return-footer">
+    <p>© <span id="year">2026</span> Senytra Network · <span data-i18n="footer.disclaimer">No afiliado a Mojang AB ni a Microsoft.</span></p>
+  </footer>
+
+  <script src="/assets/config.js"></script>
+  <script src="/assets/i18n.js"></script>
+  <script src="/assets/return.js"></script>
+</body>
+</html>
